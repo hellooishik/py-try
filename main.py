@@ -1,124 +1,91 @@
-import tkinter as tk
-from tkinter import messagebox
+from flask import Flask, render_template, request, redirect, url_for, flash
 
-# Initialize main application
-class PersonalFinanceApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Personal Finance Calculator")
-        self.income = 0
-        self.expenses = []
+app = Flask(__name__)
+app.secret_key = "your_secret_key_here"
 
-        # UI Elements
-        self.create_main_menu()
-
-    def create_main_menu(self):
-        """Creates the main menu layout."""
-        tk.Label(self.root, text="Personal Finance Calculator", font=("Helvetica", 16, "bold")).pack(pady=10)
-        
-        tk.Button(self.root, text="Add Income", width=20, command=self.add_income_ui).pack(pady=5)
-        tk.Button(self.root, text="Add Expense", width=20, command=self.add_expense_ui).pack(pady=5)
-        tk.Button(self.root, text="View Summary", width=20, command=self.view_summary).pack(pady=5)
-        tk.Button(self.root, text="Exit", width=20, command=self.root.quit).pack(pady=20)
-
-    def add_income_ui(self):
-        """UI for adding income."""
-        self.clear_screen()
-        tk.Label(self.root, text="Enter Your Monthly Income", font=("Helvetica", 14)).pack(pady=10)
-        income_entry = tk.Entry(self.root, font=("Helvetica", 12))
-        income_entry.pack(pady=5)
-
-        def save_income():
-            try:
-                income = float(income_entry.get())
-                if income < 0:
-                    messagebox.showerror("Error", "Income cannot be negative.")
-                    return
-                self.income = income
-                messagebox.showinfo("Success", f"Income of £{income} saved!")
-                self.return_to_main_menu()
-            except ValueError:
-                messagebox.showerror("Error", "Invalid income. Please enter a number.")
-
-        tk.Button(self.root, text="Save Income", command=save_income).pack(pady=10)
-        tk.Button(self.root, text="Back", command=self.return_to_main_menu).pack(pady=10)
-
-    def add_expense_ui(self):
-        """UI for adding expenses."""
-        if self.income == 0:
-            messagebox.showerror("Error", "Please add income first!")
-            return
-        
-        self.clear_screen()
-        tk.Label(self.root, text="Enter Expense Details", font=("Helvetica", 14)).pack(pady=10)
-
-        tk.Label(self.root, text="Amount", font=("Helvetica", 12)).pack(pady=5)
-        amount_entry = tk.Entry(self.root, font=("Helvetica", 12))
-        amount_entry.pack(pady=5)
-
-        tk.Label(self.root, text="Category (essential/non-essential)", font=("Helvetica", 12)).pack(pady=5)
-        category_entry = tk.Entry(self.root, font=("Helvetica", 12))
-        category_entry.pack(pady=5)
-
-        def save_expense():
-            try:
-                amount = float(amount_entry.get())
-                category = category_entry.get().lower()
-                if amount < 0:
-                    messagebox.showerror("Error", "Expense cannot be negative.")
-                    return
-                if category not in ["essential", "non-essential"]:
-                    messagebox.showerror("Error", "Category must be 'essential' or 'non-essential'.")
-                    return
-                self.expenses.append({"amount": amount, "category": category})
-                messagebox.showinfo("Success", f"Expense of £{amount} ({category}) saved!")
-                self.return_to_main_menu()
-            except ValueError:
-                messagebox.showerror("Error", "Invalid expense. Please enter a number.")
-
-        tk.Button(self.root, text="Save Expense", command=save_expense).pack(pady=10)
-        tk.Button(self.root, text="Back", command=self.return_to_main_menu).pack(pady=10)
-
-    def view_summary(self):
-        """Displays the budget summary."""
-        if not self.expenses:
-            messagebox.showinfo("Summary", "No expenses added yet.")
-            return
-
-        total_expenses = sum(e["amount"] for e in self.expenses)
-        essential_expenses = sum(e["amount"] for e in self.expenses if e["category"] == "essential")
-        non_essential_expenses = sum(e["amount"] for e in self.expenses if e["category"] == "non-essential")
-        remaining_budget = self.income - total_expenses
-
-        summary = (
-            f"--- Budget Summary ---\n"
-            f"Total Income: £{self.income}\n"
-            f"Total Expenses: £{total_expenses}\n"
-            f"  - Essential: £{essential_expenses}\n"
-            f"  - Non-Essential: £{non_essential_expenses}\n"
-            f"Remaining Budget: £{remaining_budget}\n"
-        )
-        if remaining_budget > 0:
-            summary += "Great! You are under budget. Consider saving the surplus!"
-        else:
-            summary += "Warning! You are over budget. Reassess your expenses."
-
-        messagebox.showinfo("Summary", summary)
-
-    def clear_screen(self):
-        """Clears all widgets from the window."""
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-    def return_to_main_menu(self):
-        """Returns to the main menu."""
-        self.clear_screen()
-        self.create_main_menu()
+# Global Variables to hold income and expenses
+income = 0
+expenses = []
 
 
-# Run the application
+@app.route('/')
+def index():
+    """Main page that redirects to the dashboard."""
+    return render_template("index.html")
+
+
+@app.route('/add_income', methods=['GET', 'POST'])
+def add_income():
+    """Page to add income."""
+    global income
+    if request.method == 'POST':
+        try:
+            income = float(request.form['income'])
+            if income < 0:
+                flash("Income cannot be negative.", 'error')
+            else:
+                flash(f"Income of £{income} saved!", 'success')
+                return redirect(url_for('index'))
+        except ValueError:
+            flash("Invalid income. Please enter a number.", 'error')
+
+    return render_template("add_income.html")
+
+
+@app.route('/add_expense', methods=['GET', 'POST'])
+def add_expense():
+    """Page to add expense."""
+    global expenses, income
+    if income == 0:
+        flash("Please add income first!", 'error')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        try:
+            amount = float(request.form['amount'])
+            category = request.form['category'].lower()
+            if amount < 0:
+                flash("Expense cannot be negative.", 'error')
+            elif category not in ["essential", "non-essential"]:
+                flash("Category must be 'essential' or 'non-essential'.", 'error')
+            else:
+                expenses.append({"amount": amount, "category": category})
+                flash(f"Expense of £{amount} ({category}) saved!", 'success')
+                return redirect(url_for('index'))
+        except ValueError:
+            flash("Invalid expense. Please enter a number.", 'error')
+
+    return render_template("add_expense.html")
+
+
+@app.route('/view_summary')
+def view_summary():
+    """Display budget summary."""
+    global income, expenses
+    if not expenses:
+        flash("No expenses added yet.", 'info')
+        return redirect(url_for('index'))
+
+    total_expenses = sum(e["amount"] for e in expenses)
+    essential_expenses = sum(e["amount"] for e in expenses if e["category"] == "essential")
+    non_essential_expenses = sum(e["amount"] for e in expenses if e["category"] == "non-essential")
+    remaining_budget = income - total_expenses
+
+    summary = {
+        "total_income": income,
+        "total_expenses": total_expenses,
+        "essential_expenses": essential_expenses,
+        "non_essential_expenses": non_essential_expenses,
+        "remaining_budget": remaining_budget,
+    }
+
+    if remaining_budget > 0:
+        summary["message"] = "Great! You are under budget. Consider saving the surplus!"
+    else:
+        summary["message"] = "Warning! You are over budget. Reassess your expenses."
+
+    return render_template("view_summary.html", summary=summary)
+
+
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = PersonalFinanceApp(root)
-    root.geometry("400x400")
-    root.mainloop()
+    app.run(debug=True)

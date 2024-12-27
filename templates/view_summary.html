@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summary</title>
+</head>
+<body>
+    <h1>Budget Summary</h1>
+    <p>Total Income: £{{ summary.total_income }}</p>
+    <p>Total Expenses: £{{ summary.total_expenses }}</p>
+    <p>Essential Expenses: £{{ summary.essential_expenses }}</p>
+    <p>Non-Essential Expenses: £{{ summary.non_essential_expenses }}</p>
+    <p>Remaining Budget: £{{ summary.remaining_budget }}</p>
+    <p>{{ summary.message }}</p>
+    <a href="{{ url_for('index') }}">Back</a>
+</body>
+</html>
