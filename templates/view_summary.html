@@ -4,15 +4,226 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Summary</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .summary p {
+            font-size: 18px;
+            margin: 10px 0;
+            line-height: 1.6;
+            font-weight: normal;
+        }
+
+        .summary .highlight {
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            border-radius: 10px;
+            background-color: #e0e0e0;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease-out;
+        }
+
+        .progress-bar.success span {
+            background-color: #4caf50;
+        }
+
+        .progress-bar.warning span {
+            background-color: #ff9800;
+        }
+
+        .progress-bar.danger span {
+            background-color: #f44336;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            text-decoration: none;
+            color: #007BFF;
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Responsive Styling */
+        @media (max-width: 768px) {
+            .summary {
+                width: 90%;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .summary p {
+                font-size: 16px;
+            }
+
+            canvas {
+                width: 100% !important;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Budget Summary</h1>
-    <p>Total Income: £{{ summary.total_income }}</p>
-    <p>Total Expenses: £{{ summary.total_expenses }}</p>
-    <p>Essential Expenses: £{{ summary.essential_expenses }}</p>
-    <p>Non-Essential Expenses: £{{ summary.non_essential_expenses }}</p>
-    <p>Remaining Budget: £{{ summary.remaining_budget }}</p>
-    <p>{{ summary.message }}</p>
-    <a href="{{ url_for('index') }}">Back</a>
+
+    <div class="summary">
+        <h1>Budget Summary</h1>
+
+        {% if summary.total_income == 0 or summary.total_expenses == 0 %}
+            <p>You need to add income and expenses before viewing the summary.</p>
+        {% else %}
+            <p>Total Income: <span class="highlight">£{{ summary.total_income }}</span></p>
+            <p>Total Expenses: <span class="highlight">£{{ summary.total_expenses }}</span></p>
+            <p>Essential Expenses: <span class="highlight">£{{ summary.essential_expenses }}</span></p>
+            <p>Non-Essential Expenses: <span class="highlight">£{{ summary.non_essential_expenses }}</span></p>
+            <p>Remaining Budget: <span class="highlight">£{{ summary.remaining_budget }}</span></p>
+
+            <!-- Progress Bar for Remaining Budget -->
+            <div class="progress-bar {{ 'success' if summary.remaining_budget >= 0 else 'danger' }}">
+                <span style="width: {{ (summary.remaining_budget / summary.total_income) * 100 }}%;"></span>
+            </div>
+            
+            <p>{{ summary.message }}</p>
+
+            <!-- Pie Chart to show expense distribution -->
+            <div style="margin-top: 40px;">
+                <canvas id="expenseChart"></canvas>
+            </div>
+
+            <!-- Bar Chart to show essential vs non-essential expenses -->
+            <div style="margin-top: 40px;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('index') }}">Back to Dashboard</a>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Pie Chart for Expense Distribution
+                var ctx = document.getElementById('expenseChart').getContext('2d');
+                var expenseChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Essential Expenses', 'Non-Essential Expenses'],
+                        datasets: [{
+                            label: 'Expense Distribution',
+                            data: [{{ summary.essential_expenses }}, {{ summary.non_essential_expenses }}],
+                            backgroundColor: ['#4caf50', '#ff9800'],
+                            borderColor: ['#4caf50', '#ff9800'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return tooltipItem.label + ': £' + tooltipItem.raw;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Bar Chart for Essential vs Non-Essential Expenses
+                var ctx2 = document.getElementById('categoryChart').getContext('2d');
+                var categoryChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Essential', 'Non-Essential'],
+                        datasets: [{
+                            label: 'Expenses (£)',
+                            data: [{{ summary.essential_expenses }}, {{ summary.non_essential_expenses }}],
+                            backgroundColor: ['#4caf50', '#ff9800'],
+                            borderColor: ['#4caf50', '#ff9800'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return tooltipItem.dataset.label + ': £' + tooltipItem.raw;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error rendering charts:', error);
+                alert('There was an issue rendering the charts. Check the console for details.');
+            }
+        });
+    </script>
+
 </body>
 </html>

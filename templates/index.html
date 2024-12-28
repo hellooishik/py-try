@@ -4,6 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Finance Calculator</title>
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        /* Navigation Style */
+        ul {
+            list-style: none;
+            text-align: center;
+            padding: 0;
+        }
+
+        ul li {
+            display: inline-block;
+            margin: 10px 20px;
+        }
+
+        ul li a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #007BFF;
+            padding: 15px 25px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        ul li a:hover {
+            background-color: #0056b3;
+            transform: translateY(-3px);
+        }
+
+        /* Flash Messages Style */
+        .flashed-message-container {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .flashed-message-container ul {
+            list-style-type: none;
+        }
+
+        .flashed-message-container li {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+        }
+
+        .flashed-message-container li.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flashed-message-container li.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            ul li {
+                display: block;
+                margin: 15px 0;
+            }
+
+            ul li a {
+                width: 100%;
+                padding: 12px 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <h1>Personal Finance Calculator</h1>
@@ -12,13 +119,16 @@
         <li><a href="{{ url_for('add_expense') }}">Add Expense</a></li>
         <li><a href="{{ url_for('view_summary') }}">View Summary</a></li>
     </ul>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <ul>
-                {% for category, message in messages %}
-                    <li class="{{ category }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
+            <div class="flashed-message-container">
+                <ul>
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
         {% endif %}
     {% endwith %}
 </body>

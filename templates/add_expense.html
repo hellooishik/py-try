@@ -7,141 +7,187 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
+            background-color: #f7f7f7;
             padding: 20px;
         }
 
         h1 {
-            color: #333;
             text-align: center;
-            margin-bottom: 20px;
+            color: #333;
         }
 
-        form {
-            max-width: 600px;
-            margin: 0 auto;
+        /* Form Styling */
+        #expense-form {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
         }
 
         label {
-            font-weight: bold;
             display: block;
             margin-bottom: 8px;
+            font-weight: bold;
         }
 
-        input[type="number"],
-        select {
+        input, select {
             width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
             border-radius: 4px;
+            font-size: 16px;
         }
 
         button {
+            width: 100%;
+            padding: 10px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 12px 20px;
-            margin-top: 10px;
-            width: 100%;
             border-radius: 4px;
+            font-size: 16px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         button:hover {
             background-color: #45a049;
         }
 
-        a {
-            display: block;
-            text-align: center;
+        /* Expense List Styling */
+        .expense-list {
             margin-top: 20px;
-            text-decoration: none;
-            color: #007BFF;
         }
 
-        a:hover {
-            text-decoration: underline;
+        .expense-item {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.5s forwards;
+        }
+
+        .expense-item p {
+            margin: 5px 0;
+        }
+
+        .expense-item span {
+            font-weight: bold;
+        }
+
+        /* Back Link Styling */
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .back-link a {
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .back-link a:hover {
+            color: #4CAF50;
+        }
+
+        /* Flash message styling */
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
 <body>
-
     <h1>Add Expense</h1>
 
-    <form method="POST" action="/add_expense">
+    <!-- Flash message (if any) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Expense form -->
+    <form id="expense-form" method="POST" action="/add_expense">
         <label for="amount">Amount:</label>
         <input type="number" id="amount" name="amount" required>
 
         <label for="category">Category:</label>
-        <select id="category" name="category" required onchange="updateSubcategoryOptions()">
+        <select id="category" name="category" required>
             <option value="essential">Essential</option>
             <option value="non-essential">Non-Essential</option>
         </select>
 
-        <label for="subcategory">Expense Subcategory:</label>
-        <div id="subcategory-container">
-            <select id="subcategory" name="subcategory" required>
-                <option value="Rent">Rent</option>
-                <option value="Transportation">Transportation</option>
-                <option value="Food">Food</option>
-                <option value="Bills">Bills</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-
         <button type="submit">Add Expense</button>
     </form>
 
-    <a href="/">Back</a>
+    <!-- Expense List -->
+    <div class="expense-list">
+        <h2>Expense Summary</h2>
+        {% if expenses %}
+            {% for expense in expenses %}
+                <div class="expense-item">
+                    <p><span>Amount:</span> £{{ expense.amount }}</p>
+                    <p><span>Category:</span> {{ expense.category }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No expenses added yet.</p>
+        {% endif %}
+    </div>
 
-    <script>
-        // Initialize subcategory options on page load
-        window.onload = function() {
-            updateSubcategoryOptions();
-        };
-
-        function updateSubcategoryOptions() {
-            const category = document.getElementById("category").value;
-            const subcategoryContainer = document.getElementById("subcategory-container");
-
-            // Remove previous subcategory options
-            subcategoryContainer.innerHTML = '';
-
-            // Create new subcategory select element
-            const subcategorySelect = document.createElement('select');
-            subcategorySelect.name = 'subcategory';
-            subcategorySelect.id = 'subcategory';
-            subcategorySelect.required = true;
-
-            // Add appropriate subcategory options based on the selected category
-            if (category === 'essential') {
-                const options = ['Rent', 'Transportation', 'Food', 'Bills', 'Other'];
-                options.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option;
-                    opt.textContent = option;
-                    subcategorySelect.appendChild(opt);
-                });
-            } else if (category === 'non-essential') {
-                const options = ['Entertainment', 'Shopping', 'Dining Out', 'Hobbies', 'Other'];
-                options.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option;
-                    opt.textContent = option;
-                    subcategorySelect.appendChild(opt);
-                });
-            }
-
-            // Append the new select element to the subcategory container
-            subcategoryContainer.appendChild(subcategorySelect);
-        }
-    </script>
+    <!-- Back Link -->
+    <div class="back-link">
+        <a href="/">Back</a>
+    </div>
 
 </body>
 </html>
